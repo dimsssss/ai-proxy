@@ -1,0 +1,16 @@
+name: database
+
+services:
+  db:
+    image: mysql
+    container_name: ai-proxy
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: ai-proxy
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: 1234
+    volumes:
+      - ./dump/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - "1234:3306"
+
