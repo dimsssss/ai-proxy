@@ -19,6 +19,16 @@ CREATE TABLE `rate_limits` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- `ai-proxy`.request_log definition
+
+CREATE TABLE `request_log` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `service_id` char(36) NOT NULL,
+  `api_type` varchar(10) NOT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 INSERT INTO `ai-proxy`.services
 (id, name, created_at)
 VALUES('ac85de66-6b64-11ef-82d6-0242ac150002', 'service1', '2024-09-05 08:56:00');
