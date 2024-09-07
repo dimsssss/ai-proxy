@@ -6,9 +6,9 @@ import (
 )
 
 type Service struct {
-	Id              string
-	LimitBpm        int
-	LimitRpm        int
+	Id              string `gorm:"column:service_id"`
+	LimitBpm        int    `gorm:"column:bpm"`
+	LimitRpm        int    `gorm:"column:rpm"`
 	LastRequestTime time.Time
 	Bpm             int
 	Rpm             int
@@ -34,11 +34,12 @@ func NewService(
 	return &s
 }
 
-func (s *Service) update(bodySize int) {
+func (s *Service) Update(bodySize int) {
 	defer s.m.Unlock()
 	s.m.Lock()
 	s.Bpm += bodySize
 	s.Rpm += 1
+	s.LastRequestTime = time.Now()
 }
 
 func (s *Service) init() {
@@ -46,6 +47,7 @@ func (s *Service) init() {
 	s.m.Lock()
 	s.Bpm = 0
 	s.Rpm = 0
+	s.LastRequestTime = time.Now()
 }
 
 type RateLimitError struct {
@@ -56,30 +58,54 @@ func (e *RateLimitError) Error() string {
 	return e.message
 }
 
+type InvalidError struct {
+	message string
+}
+
+func (e *InvalidError) Error() string {
+	return e.message
+}
+
 type RateLimit struct {
-	services map[string]*Service
+	Services map[string]*Service
 }
 
 func NewRateLimit() *RateLimit {
 	r := RateLimit{}
-	r.services = make(map[string]*Service)
+	r.Services = make(map[string]*Service)
+	return &r
+}
+
+func NewRateLimitWith(services []*Service) *RateLimit {
+	r := RateLimit{}
+	r.Services = make(map[string]*Service)
+	r.convert(services)
 	return &r
 }
 
 func Of(service *Service) *RateLimit {
 	r := RateLimit{}
-	r.services = make(map[string]*Service)
-	r.services[service.Id] = service
+	r.Services = make(map[string]*Service)
+	r.Services[service.Id] = service
 
 	return &r
 }
 
+func (r *RateLimit) convert(services []*Service) {
+	for _, service := range services {
+		r.Add(service)
+	}
+}
+
 func (r *RateLimit) Add(service *Service) {
-	r.services[service.Id] = service
+	r.Services[service.Id] = service
 }
 
 func (r *RateLimit) isExist(serviceId string, service *Service) bool {
-	return r.services[serviceId] == service && r.services[serviceId].Id == serviceId
+	if s, ok := r.Services[serviceId]; ok {
+		return s == service && s.Id == serviceId
+	}
+	return false
 }
 
 func (s *Service) exceedOneMinute(current time.Time) bool {
@@ -96,7 +122,7 @@ func (s *Service) exceedRpm() bool {
 
 func (r *RateLimit) ProcessRateLimit(current time.Time, service *Service) (bool, error) {
 	if !r.isExist(service.Id, service) {
-		return false, &RateLimitError{
+		return false, &InvalidError{
 			message: "not exist service",
 		}
 	}

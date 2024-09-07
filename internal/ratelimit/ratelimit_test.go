@@ -1,10 +1,11 @@
 package ratelimit_test
 
 import (
+	"sync"
 	"testing"
 	"time"
 
-	"github.com/dimsssss/ai-proxy/ratelimit"
+	"github.com/dimsssss/ai-proxy/internal/ratelimit"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -109,4 +110,48 @@ func TestProcessRateLimit_Success(t *testing.T) {
 
 	assert.Equal(t, success, true, "Within 1 minute, if rpm and bpm is less than the limit, should return true")
 	assert.Equal(t, err, nil, "Within 1 minute, if rpm and bpm is less than the limit, should return nil")
+}
+
+func TestProcessRateLimit_MultiThread(t *testing.T) {
+	rl := ratelimit.NewRateLimit()
+	service := ratelimit.NewService("testService", 1000, 10, time.Now(), 0, 0)
+	rl.Add(service)
+
+	startTime := time.Now()
+
+	var wg sync.WaitGroup
+
+	goroutines := 100
+
+	for i := 0; i < goroutines; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			for time.Since(startTime) < time.Second {
+				result, err := rl.ProcessRateLimit(time.Now(), service)
+
+				if err != nil {
+					if _, ok := err.(*ratelimit.RateLimitError); ok {
+						continue
+					}
+					t.Errorf("Unexpected error: %v", err)
+					return
+				}
+
+				if result {
+					service.Update(1)
+				}
+			}
+		}()
+	}
+
+	wg.Wait()
+
+	if service.Bpm > service.LimitBpm {
+		t.Errorf("Bpm exceeded limit: %d", service.Bpm)
+	}
+	if service.Rpm > service.LimitRpm {
+		t.Errorf("Rpm exceeded limit: %d", service.Rpm)
+	}
 }
