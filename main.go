@@ -3,8 +3,8 @@ package main
 import (
 	"github.com/gin-gonic/gin"
 
-	"github.com/dimsssss/ai-proxy/internal/database"
-	"github.com/dimsssss/ai-proxy/internal/env"
+	"github.com/dimsssss/ai-proxy/cmd/database"
+	"github.com/dimsssss/ai-proxy/cmd/env"
 )
 
 func main() {

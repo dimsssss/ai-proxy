@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/dimsssss/ai-proxy/ratelimit"
+	"github.com/dimsssss/ai-proxy/internal/ratelimit"
 	"github.com/stretchr/testify/assert"
 )
 
