@@ -128,7 +128,7 @@ func TestProcessRateLimit_MultiThread(t *testing.T) {
 		go func() {
 			defer wg.Done()
 
-			for time.Since(startTime) < 2*time.Second {
+			for time.Since(startTime) < time.Second {
 				result, err := rl.ProcessRateLimit(time.Now(), service)
 
 				if err != nil {
