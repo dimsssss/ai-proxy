@@ -34,7 +34,7 @@ func NewService(
 	return &s
 }
 
-func (s *Service) update(bodySize int) {
+func (s *Service) Update(bodySize int) {
 	defer s.m.Unlock()
 	s.m.Lock()
 	s.Bpm += bodySize
